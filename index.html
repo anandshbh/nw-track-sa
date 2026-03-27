@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grand Total Daily Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 2rem; }
+  h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a18; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+  .metric { background: #fff; border-radius: 8px; border: 0.5px solid rgba(0,0,0,0.12); padding: 0.85rem 1rem; }
+  .metric .label { font-size: 12px; color: #888780; margin-bottom: 4px; }
+  .metric .value { font-size: 20px; font-weight: 500; color: #1a1a18; }
+  .metric .sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+  .chart-wrap { position: relative; width: 100%; height: 320px; margin-bottom: 2rem; background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 1rem; }
+  .tbl-container { overflow-x: auto; border: 0.5px solid rgba(0,0,0,0.12); border-radius: 12px; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: #f5f5f3; color: #888780; font-weight: 500; text-align: left; padding: 10px 14px; border-bottom: 0.5px solid rgba(0,0,0,0.1); white-space: nowrap; }
+  tbody td { padding: 8px 14px; border-bottom: 0.5px solid rgba(0,0,0,0.07); color: #1a1a18; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: #f9f9f7; }
+  .up { color: #1D9E75; font-weight: 500; }
+  .dn { color: #D85A30; font-weight: 500; }
+  .neu { color: #888780; }
+  .row-max td { background: #9FE1CB !important; color: #04342C !important; }
+  .row-min td { background: #F5C4B3 !important; color: #4A1B0C !important; }
+  .row-max:hover td { background: #5DCAA5 !important; color: #04342C !important; }
+  .row-min:hover td { background: #F0997B !important; color: #4A1B0C !important; }
+  .row-max .up, .row-max .dn, .row-max .neu { color: #04342C !important; }
+  .row-min .up, .row-min .dn, .row-min .neu { color: #4A1B0C !important; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
+  .badge-max { background: #085041; color: #E1F5EE; }
+  .badge-min { background: #712B13; color: #FAECE7; }
+  .legend-row { display: flex; gap: 16px; margin-bottom: 10px; font-size: 12px; color: #888780; flex-wrap: wrap; }
+  .legend-row span { display: flex; align-items: center; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; }
+  .note { font-size: 11px; color: #aaa; margin-top: 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Daily Sheet Update — Grand Total</h1>
+  <div class="metric-row" id="metrics"></div>
+  <div class="legend-row">
+    <span><span class="dot" style="background:#1D9E75"></span>Positive change</span>
+    <span><span class="dot" style="background:#D85A30"></span>Negative change</span>
+    <span><span class="dot" style="background:#9FE1CB"></span>Maximum value</span>
+    <span><span class="dot" style="background:#F5C4B3"></span>Minimum value</span>
+  </div>
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
+  <div class="tbl-container">
+    <table>
+      <thead><tr><th>#</th><th>Date</th><th>Value</th><th>Daily Change</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+  <p class="note">* Feb 20 & 21 had no email. Feb 22 change is vs. Feb 19.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const raw = [
+  ["19 Jan 2026", 2621372],["20 Jan 2026", 2623793],["21 Jan 2026", 2625143],
+  ["22 Jan 2026", 2648459],["23 Jan 2026", 2683192],["24 Jan 2026", 2627034],
+  ["25 Jan 2026", 2626942],["26 Jan 2026", 2627092],["27 Jan 2026", 2520480],
+  ["28 Jan 2026", 2524223],["29 Jan 2026", 2559437],["30 Jan 2026", 2587869],
+  ["31 Jan 2026", 2635183],["01 Feb 2026", 2633920],["02 Feb 2026", 2648654],
+  ["03 Feb 2026", 2548478],["04 Feb 2026", 2473821],["05 Feb 2026", 2498808],
+  ["06 Feb 2026", 2547831],["07 Feb 2026", 2503658],["08 Feb 2026", 2504155],
+  ["09 Feb 2026", 2504672],["10 Feb 2026", 2496383],["11 Feb 2026", 2519633],
+  ["12 Feb 2026", 2524728],["13 Feb 2026", 2520071],["14 Feb 2026", 2503996],
+  ["15 Feb 2026", 2503867],["16 Feb 2026", 2504236],["17 Feb 2026", 2475323],
+  ["18 Feb 2026", 2455149],["19 Feb 2026", 2446252],["22 Feb 2026", 2449689],
+  ["23 Feb 2026", 2449086],["24 Feb 2026", 2448022],["25 Feb 2026", 2477359],
+  ["26 Feb 2026", 2477117],["27 Feb 2026", 2484173],["28 Feb 2026", 2461299],
+  ["01 Mar 2026", 2461855],["02 Mar 2026", 2461156],["03 Mar 2026", 2455836],
+  ["04 Mar 2026", 2488785],["05 Mar 2026", 2479902],["06 Mar 2026", 2449466],
+  ["07 Mar 2026", 2439227],["08 Mar 2026", 2439070],["09 Mar 2026", 2438936],
+  ["10 Mar 2026", 2439504],["11 Mar 2026", 2412897],["12 Mar 2026", 2419674],
+  ["13 Mar 2026", 2400811],["14 Mar 2026", 2386138],["15 Mar 2026", 2386333],
+  ["16 Mar 2026", 2387248],["17 Mar 2026", 2417328],["18 Mar 2026", 2407909],
+  ["19 Mar 2026", 2426312],["20 Mar 2026", 2405187],["21 Mar 2026", 2405212],
+  ["22 Mar 2026", 2355160],["23 Mar 2026", 2354645],["24 Mar 2026", 2340975],
+  ["25 Mar 2026", 2341417],["26 Mar 2026", 2330330],["27 Mar 2026", 2355495],
+];
+
+const vals = raw.map(r => r[1]);
+const maxVal = Math.max(...vals), minVal = Math.min(...vals);
+const maxIdx = vals.indexOf(maxVal), minIdx = vals.indexOf(minVal);
+
+document.getElementById("metrics").innerHTML = `
+  <div class="metric"><div class="label">Latest value</div><div class="value">${raw[raw.length-1][1].toLocaleString()}</div><div class="sub">${raw[raw.length-1][0]}</div></div>
+  <div class="metric"><div class="label">Maximum</div><div class="value" style="color:#085041">${maxVal.toLocaleString()}</div><div class="sub">${raw[maxIdx][0]}</div></div>
+  <div class="metric"><div class="label">Minimum</div><div class="value" style="color:#993C1D">${minVal.toLocaleString()}</div><div class="sub">${raw[minIdx][0]}</div></div>
+`;
+
+const tbody = document.getElementById("tbody");
+raw.forEach((r, i) => {
+  const change = i === 0 ? null : r[1] - raw[i-1][1];
+  const isMax = r[1] === maxVal, isMin = r[1] === minVal;
+  const chgStr = change === null ? "—" : (change >= 0 ? "+" : "") + change.toLocaleString();
+  const cls = change === null ? "neu" : change > 0 ? "up" : "dn";
+  const badge = isMax ? '<span class="badge badge-max">MAX</span>' : isMin ? '<span class="badge badge-min">MIN</span>' : '';
+  const rowCls = isMax ? "row-max" : isMin ? "row-min" : "";
+  tbody.innerHTML += `<tr class="${rowCls}">
+    <td style="color:#aaa">${i+1}</td>
+    <td>${r[0]}</td>
+    <td>${r[1].toLocaleString()}${badge}</td>
+    <td class="${cls}">${chgStr}</td>
+  </tr>`;
+});
+
+const bgColors = raw.map((_,i) => i===maxIdx ? "rgba(29,158,117,0.55)" : i===minIdx ? "rgba(216,90,48,0.55)" : "rgba(55,138,221,0.35)");
+const borderColors = raw.map((_,i) => i===maxIdx ? "#085041" : i===minIdx ? "#4A1B0C" : "#185FA5");
+
+new Chart(document.getElementById("chart"), {
+  type: "line",
+  data: {
+    labels: raw.map(r => r[0]),
+    datasets: [{
+      label: "Grand Total",
+      data: vals,
+      fill: true,
+      tension: 0.3,
+      borderColor: "#185FA5",
+      borderWidth: 1.8,
+      backgroundColor: "rgba(55,138,221,0.08)",
+      pointBackgroundColor: bgColors,
+      pointBorderColor: borderColors,
+      pointBorderWidth: raw.map((_,i) => (i===maxIdx||i===minIdx)?2:1),
+      pointRadius: raw.map((_,i) => (i===maxIdx||i===minIdx)?7:3),
+      pointHoverRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            let label = "  Value: " + ctx.parsed.y.toLocaleString();
+            if (ctx.dataIndex === maxIdx) label += "  ▲ MAX";
+            if (ctx.dataIndex === minIdx) label += "  ▼ MIN";
+            return label;
+          },
+          afterLabel: ctx => {
+            const i = ctx.dataIndex;
+            if (i === 0) return "";
+            const chg = vals[i] - vals[i-1];
+            return "  Change: " + (chg >= 0 ? "+" : "") + chg.toLocaleString();
+          }
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, font: { size: 10 }, color: "#888780" }, grid: { color: "rgba(136,135,128,0.1)" } },
+      y: { ticks: { callback: v => (v/1000000).toFixed(2) + "M", font: { size: 10 }, color: "#888780" }, grid: { color: "rgba(136,135,128,0.1)" } }
+    }
+  }
+});
+</script>
+</body>
+</html>
