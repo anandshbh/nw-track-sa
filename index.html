@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,47 +7,186 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a18; min-height: 100vh; padding: 2rem 1.5rem; }
-  h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; color: #1a1a18; }
+
+  :root {
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.1);
+    --border-light: rgba(0,0,0,0.07);
+    --text: #1a1a18;
+    --text-muted: #888780;
+    --text-faint: #aaa;
+    --row-hover: #f9f9f7;
+    --thead-bg: #f5f5f3;
+    --max-row-bg: #9FE1CB;
+    --max-row-text: #04342C;
+    --max-row-hover: #5DCAA5;
+    --min-row-bg: #F5C4B3;
+    --min-row-text: #4A1B0C;
+    --min-row-hover: #F0997B;
+    --month-bg: #f0f0ee;
+    --month-hover: #e6e6e3;
+    --month-text: #1a1a18;
+    --toggle-track: #d0d0ce;
+    --toggle-thumb: #fff;
+    --chart-bg: rgba(55,138,221,0.08);
+  }
+
+  [data-theme="dark"] {
+    --bg: #141412;
+    --surface: #1e1e1c;
+    --border: rgba(255,255,255,0.1);
+    --border-light: rgba(255,255,255,0.06);
+    --text: #e8e8e4;
+    --text-muted: #7a7a76;
+    --text-faint: #555552;
+    --row-hover: #252523;
+    --thead-bg: #181816;
+    --max-row-bg: #0b3d30;
+    --max-row-text: #9FE1CB;
+    --max-row-hover: #0d4a3a;
+    --min-row-bg: #3d1a0f;
+    --min-row-text: #F5C4B3;
+    --min-row-hover: #4a2012;
+    --month-bg: #282826;
+    --month-hover: #2f2f2c;
+    --month-text: #c8c8c4;
+    --toggle-track: #444440;
+    --toggle-thumb: #888780;
+    --chart-bg: rgba(55,138,221,0.05);
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+    transition: background 0.25s, color 0.25s;
+  }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 8px; }
+  h1 { font-size: 20px; font-weight: 500; color: var(--text); }
+
+  /* Dark mode toggle */
+  .dm-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px 5px 8px;
+    transition: background 0.2s, border-color 0.2s;
+    user-select: none;
+  }
+  .dm-toggle:hover { background: var(--month-bg); }
+  .dm-icon { font-size: 14px; transition: transform 0.4s; }
+  [data-theme="dark"] .dm-icon { transform: rotate(180deg); }
+
   .metric-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
-  .metric { background: #fff; border-radius: 10px; padding: 0.9rem 1.1rem; border: 0.5px solid rgba(0,0,0,0.1); }
-  .metric .label { font-size: 12px; color: #888780; margin-bottom: 4px; }
+  .metric { background: var(--surface); border-radius: 10px; padding: 0.9rem 1.1rem; border: 0.5px solid var(--border); transition: background 0.25s, border-color 0.25s; }
+  .metric .label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
   .metric .value { font-size: 20px; font-weight: 500; }
-  .metric .sub { font-size: 11px; color: #aaa; margin-top: 2px; }
-  .chart-wrap { position: relative; width: 100%; height: 320px; margin-bottom: 2rem; background: #fff; border-radius: 12px; border: 0.5px solid rgba(0,0,0,0.1); padding: 1rem; }
-  .legend-row { display: flex; gap: 16px; margin-bottom: 10px; font-size: 12px; color: #888780; flex-wrap: wrap; }
+  .metric .sub { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+  .chart-wrap { position: relative; width: 100%; height: 320px; margin-bottom: 2rem; background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 1rem; transition: background 0.25s, border-color 0.25s; }
+
+  .legend-row { display: flex; gap: 16px; margin-bottom: 10px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
   .legend-row span { display: flex; align-items: center; gap: 5px; }
   .dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
-  .tbl-container { overflow-x: auto; border: 0.5px solid rgba(0,0,0,0.1); border-radius: 12px; background: #fff; }
+
+  .tbl-container { overflow-x: auto; border: 0.5px solid var(--border); border-radius: 12px; background: var(--surface); transition: background 0.25s, border-color 0.25s; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { background: #f5f5f3; color: #888780; font-weight: 500; text-align: left; padding: 10px 14px; border-bottom: 0.5px solid rgba(0,0,0,0.1); white-space: nowrap; }
-  tbody td { padding: 8px 14px; border-bottom: 0.5px solid rgba(0,0,0,0.07); color: #1a1a18; white-space: nowrap; }
+  thead th { background: var(--thead-bg); color: var(--text-muted); font-weight: 500; text-align: left; padding: 10px 14px; border-bottom: 0.5px solid var(--border); white-space: nowrap; transition: background 0.25s; }
+  tbody td { padding: 8px 14px; border-bottom: 0.5px solid var(--border-light); color: var(--text); white-space: nowrap; transition: background 0.15s, color 0.15s; }
   tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: #f9f9f7; }
+  tbody tr:hover td { background: var(--row-hover); }
+
+  /* Month header row */
+  .month-row { cursor: pointer; }
+  .month-row td {
+    background: var(--month-bg) !important;
+    color: var(--month-text) !important;
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 7px 14px;
+    border-bottom: 0.5px solid var(--border) !important;
+    transition: background 0.15s;
+    user-select: none;
+  }
+  .month-row:hover td { background: var(--month-hover) !important; }
+  .month-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--month-text);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    font-family: inherit;
+  }
+  .toggle-arrow {
+    display: inline-block;
+    transition: transform 0.22s cubic-bezier(.4,0,.2,1);
+    font-style: normal;
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+  .toggle-arrow.open { transform: rotate(90deg); }
+
+  /* Month summary cells */
+  .month-summary-cell { font-size: 11px; color: var(--text-muted); }
+  .month-summary-cell.up { color: #1D9E75; font-weight: 500; }
+  .month-summary-cell.dn { color: #D85A30; font-weight: 500; }
+
+  /* Data rows */
+  .data-row td { transition: background 0.15s; }
+  .data-row.hidden { display: none; }
+
   .up { color: #1D9E75; font-weight: 500; }
   .dn { color: #D85A30; font-weight: 500; }
-  .neu { color: #888780; }
-  .row-max td { background: #9FE1CB !important; color: #04342C !important; }
-  .row-min td { background: #F5C4B3 !important; color: #4A1B0C !important; }
-  .row-max:hover td { background: #5DCAA5 !important; color: #04342C !important; }
-  .row-min:hover td { background: #F0997B !important; color: #4A1B0C !important; }
-  .row-max .up, .row-max .dn, .row-max .neu { color: #04342C !important; }
-  .row-min .up, .row-min .dn, .row-min .neu { color: #4A1B0C !important; }
+  .neu { color: var(--text-muted); }
+
+  .row-max td { background: var(--max-row-bg) !important; color: var(--max-row-text) !important; }
+  .row-min td { background: var(--min-row-bg) !important; color: var(--min-row-text) !important; }
+  .row-max:hover td { background: var(--max-row-hover) !important; }
+  .row-min:hover td { background: var(--min-row-hover) !important; }
+  .row-max .up, .row-max .dn, .row-max .neu { color: var(--max-row-text) !important; }
+  .row-min .up, .row-min .dn, .row-min .neu { color: var(--min-row-text) !important; }
+
   .badge { display: inline-block; font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; }
   .badge-max { background: #085041; color: #E1F5EE; }
   .badge-min { background: #712B13; color: #FAECE7; }
-  .note { font-size: 11px; color: #aaa; margin-top: 8px; }
+
+  .note { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
   @media (max-width: 500px) { .metric-row { grid-template-columns: 1fr 1fr; } }
 </style>
-<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="shortcut icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
+<link rel="icon" type="image/png" href="/assets/favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+<link rel="shortcut icon" href="/assets/favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
+<link rel="manifest" href="/assets/site.webmanifest" />
 </head>
 <body>
 
-<h1>Mutual Fund Value — Grand Total — [s.anand]:</h1>
+<div class="top-bar">
+  <h1>Mutual Fund Value — Grand Total — [s.anand]</h1>
+  <button class="dm-toggle" id="dmToggle" onclick="toggleDarkMode()">
+    <span class="dm-icon" id="dmIcon">☀️</span>
+    <span id="dmLabel">Light</span>
+  </button>
+</div>
 
 <div class="metric-row" id="metrics"></div>
 
@@ -141,99 +280,187 @@ const raw = [
   ["29 Mar 2026", 2342702],
   ["30 Mar 2026", 2342261],
   ["31 Mar 2026", 2300479],
-  ["1 Apr 2026", 2301858],
-  ["2 Apr 2026", 2315466],
+  ["1 Apr 2026",  2301858],
+  ["2 Apr 2026",  2315466],
 ];
 
-const fmt = n => "INR " + n.toLocaleString("en-IN");
+/* ── helpers ── */
+const fmt    = n => "INR " + n.toLocaleString("en-IN");
 const fmtChg = n => (n >= 0 ? "+INR " : "-INR ") + Math.abs(n).toLocaleString("en-IN");
 
-const vals = raw.map(r => r[1]);
+const vals   = raw.map(r => r[1]);
 const maxVal = Math.max(...vals), minVal = Math.min(...vals);
 const maxIdx = vals.indexOf(maxVal), minIdx = vals.indexOf(minVal);
 
+/* ── metrics ── */
 document.getElementById("metrics").innerHTML = `
   <div class="metric"><div class="label">Latest value</div><div class="value">${fmt(raw[raw.length-1][1])}</div><div class="sub">${raw[raw.length-1][0]}</div></div>
   <div class="metric"><div class="label">Maximum</div><div class="value" style="color:#085041">${fmt(maxVal)}</div><div class="sub">${raw[maxIdx][0]}</div></div>
   <div class="metric"><div class="label">Minimum</div><div class="value" style="color:#712B13">${fmt(minVal)}</div><div class="sub">${raw[minIdx][0]}</div></div>
 `;
 
-const tbody = document.getElementById("tbody");
+/* ── group rows by "Mon YYYY" ── */
+function getMonthKey(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleString("en-IN", { month: "short", year: "numeric" });
+}
+
+// Build groups: [{key, rows:[{i, date, val, change}]}]
+const groups = [];
+const keyOrder = [];
 raw.forEach((r, i) => {
+  const key = getMonthKey(r[0]);
+  if (!keyOrder.includes(key)) { keyOrder.push(key); groups.push({ key, rows: [] }); }
+  const g = groups.find(g => g.key === key);
   const change = i === 0 ? null : r[1] - raw[i-1][1];
-  const isMax = r[1] === maxVal, isMin = r[1] === minVal;
-  const chgStr = change === null ? "—" : fmtChg(change);
-  const cls = change === null ? "neu" : change > 0 ? "up" : "dn";
-  const badge = isMax ? '<span class="badge badge-max">MAX</span>' : isMin ? '<span class="badge badge-min">MIN</span>' : '';
-  const rowCls = isMax ? "row-max" : isMin ? "row-min" : "";
-  tbody.innerHTML += `<tr class="${rowCls}">
-    <td style="color:#aaa">${i+1}</td>
-    <td>${r[0]}</td>
-    <td>${fmt(r[1])}${badge}</td>
-    <td class="${cls}">${chgStr}</td>
-  </tr>`;
+  g.rows.push({ i, date: r[0], val: r[1], change });
 });
 
-const bgColors = raw.map((_,i) => i===maxIdx ? "rgba(29,158,117,0.55)" : i===minIdx ? "rgba(216,90,48,0.55)" : "rgba(55,138,221,0.35)");
+/* ── render table ── */
+const tbody = document.getElementById("tbody");
+const monthState = {}; // key -> open(true)/closed(false)
+
+groups.forEach(g => {
+  monthState[g.key] = true; // default: expanded
+
+  // Month summary: net change across month
+  const firstVal = g.rows[0].val;
+  const lastVal  = g.rows[g.rows.length - 1].val;
+  const netChg   = lastVal - firstVal;
+  const netCls   = netChg > 0 ? "up" : netChg < 0 ? "dn" : "neu";
+  const countStr = `${g.rows.length} days`;
+
+  // Header row
+  const headerTr = document.createElement("tr");
+  headerTr.className = "month-row";
+  headerTr.dataset.month = g.key;
+  headerTr.innerHTML = `
+    <td colspan="2">
+      <button class="month-toggle-btn" data-month="${g.key}" onclick="toggleMonth('${g.key}')">
+        <span class="toggle-arrow open" id="arrow-${CSS.escape(g.key)}">▶</span>
+        ${g.key}
+      </button>
+    </td>
+    <td class="month-summary-cell">${countStr}</td>
+    <td class="month-summary-cell ${netCls}">${fmtChg(netChg)} net</td>
+  `;
+  headerTr.addEventListener("click", (e) => {
+    if (!e.target.closest(".month-toggle-btn")) toggleMonth(g.key);
+  });
+  tbody.appendChild(headerTr);
+
+  // Data rows
+  g.rows.forEach(row => {
+    const isMax = row.val === maxVal, isMin = row.val === minVal;
+    const chgStr = row.change === null ? "—" : fmtChg(row.change);
+    const cls    = row.change === null ? "neu" : row.change > 0 ? "up" : "dn";
+    const badge  = isMax ? '<span class="badge badge-max">MAX</span>' : isMin ? '<span class="badge badge-min">MIN</span>' : '';
+    const rowCls = isMax ? "row-max" : isMin ? "row-min" : "";
+
+    const tr = document.createElement("tr");
+    tr.className = `data-row ${rowCls}`;
+    tr.dataset.month = g.key;
+    tr.innerHTML = `
+      <td style="color:var(--text-faint)">${row.i + 1}</td>
+      <td>${row.date}</td>
+      <td>${fmt(row.val)}${badge}</td>
+      <td class="${cls}">${chgStr}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+});
+
+function toggleMonth(key) {
+  monthState[key] = !monthState[key];
+  const isOpen = monthState[key];
+  // toggle rows
+  document.querySelectorAll(`.data-row[data-month="${key}"]`).forEach(tr => {
+    tr.classList.toggle("hidden", !isOpen);
+  });
+  // toggle arrow
+  const arrow = document.getElementById("arrow-" + CSS.escape(key));
+  if (arrow) arrow.classList.toggle("open", isOpen);
+}
+
+/* ── chart ── */
+const bgColors     = raw.map((_,i) => i===maxIdx ? "rgba(29,158,117,0.55)" : i===minIdx ? "rgba(216,90,48,0.55)" : "rgba(55,138,221,0.35)");
 const borderColors = raw.map((_,i) => i===maxIdx ? "#085041" : i===minIdx ? "#4A1B0C" : "#185FA5");
 
-new Chart(document.getElementById("chart"), {
-  type: "line",
-  data: {
-    labels: raw.map(r => r[0]),
-    datasets: [{
-      label: "Grand Total",
-      data: vals,
-      fill: true,
-      tension: 0.3,
-      borderColor: "#185FA5",
-      borderWidth: 1.8,
-      backgroundColor: "rgba(55,138,221,0.08)",
-      pointBackgroundColor: bgColors,
-      pointBorderColor: borderColors,
-      pointBorderWidth: raw.map((_,i) => (i===maxIdx||i===minIdx)?2:1),
-      pointRadius: raw.map((_,i) => (i===maxIdx||i===minIdx)?7:3),
-      pointHoverRadius: 6,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: {
-        callbacks: {
-          label: ctx => {
-            let label = "  Value: INR " + ctx.parsed.y.toLocaleString("en-IN");
-            if (ctx.dataIndex === maxIdx) label += "  ▲ MAX";
-            if (ctx.dataIndex === minIdx) label += "  ▼ MIN";
-            return label;
-          },
-          afterLabel: ctx => {
-            const i = ctx.dataIndex;
-            if (i === 0) return "";
-            const chg = vals[i] - vals[i-1];
-            return "  Change: " + (chg >= 0 ? "+INR " : "-INR ") + Math.abs(chg).toLocaleString("en-IN");
+let chartInstance = null;
+function buildChart(darkMode) {
+  if (chartInstance) chartInstance.destroy();
+  const gridColor = darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+  const tickColor = darkMode ? "#666662" : "#888780";
+  chartInstance = new Chart(document.getElementById("chart"), {
+    type: "line",
+    data: {
+      labels: raw.map(r => r[0]),
+      datasets: [{
+        label: "Grand Total",
+        data: vals,
+        fill: true,
+        tension: 0.3,
+        borderColor: "#185FA5",
+        borderWidth: 1.8,
+        backgroundColor: darkMode ? "rgba(55,138,221,0.05)" : "rgba(55,138,221,0.08)",
+        pointBackgroundColor: bgColors,
+        pointBorderColor: borderColors,
+        pointBorderWidth: raw.map((_,i) => (i===maxIdx||i===minIdx)?2:1),
+        pointRadius: raw.map((_,i) => (i===maxIdx||i===minIdx)?7:3),
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              let label = "  Value: INR " + ctx.parsed.y.toLocaleString("en-IN");
+              if (ctx.dataIndex === maxIdx) label += "  ▲ MAX";
+              if (ctx.dataIndex === minIdx) label += "  ▼ MIN";
+              return label;
+            },
+            afterLabel: ctx => {
+              const i = ctx.dataIndex;
+              if (i === 0) return "";
+              const chg = vals[i] - vals[i-1];
+              return "  Change: " + (chg >= 0 ? "+INR " : "-INR ") + Math.abs(chg).toLocaleString("en-IN");
+            }
           }
         }
-      }
-    },
-    scales: {
-      x: {
-        ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, font: { size: 10 }, color: "#888780" },
-        grid: { color: "rgba(0,0,0,0.05)" }
       },
-      y: {
-        ticks: {
-          callback: v => "INR " + (v/100000).toFixed(1) + "L",
-          font: { size: 10 },
-          color: "#888780"
+      scales: {
+        x: {
+          ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, font: { size: 10 }, color: tickColor },
+          grid: { color: gridColor }
         },
-        grid: { color: "rgba(0,0,0,0.05)" }
+        y: {
+          ticks: {
+            callback: v => "INR " + (v/100000).toFixed(1) + "L",
+            font: { size: 10 },
+            color: tickColor
+          },
+          grid: { color: gridColor }
+        }
       }
     }
-  }
-});
+  });
+}
+
+/* ── dark mode ── */
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  document.getElementById("dmIcon").textContent  = next === "dark" ? "🌙" : "☀️";
+  document.getElementById("dmLabel").textContent = next === "dark" ? "Dark" : "Light";
+  buildChart(next === "dark");
+}
+
+buildChart(false);
 </script>
 </body>
 </html>
