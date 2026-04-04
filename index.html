@@ -284,4 +284,185 @@ const raw = [
   ["2 Apr 2026",  2315466],
   ["3 Apr 2026",  2315403],
   ["4 Apr 2026",  2335666],
-]
+];
+
+/* ── helpers ── */
+const fmt    = n => "INR " + n.toLocaleString("en-IN");
+const fmtChg = n => (n >= 0 ? "+INR " : "-INR ") + Math.abs(n).toLocaleString("en-IN");
+
+const vals   = raw.map(r => r[1]);
+const maxVal = Math.max(...vals), minVal = Math.min(...vals);
+const maxIdx = vals.indexOf(maxVal), minIdx = vals.indexOf(minVal);
+
+/* ── metrics ── */
+document.getElementById("metrics").innerHTML = `
+  <div class="metric"><div class="label">Latest value</div><div class="value">${fmt(raw[raw.length-1][1])}</div><div class="sub">${raw[raw.length-1][0]}</div></div>
+  <div class="metric"><div class="label">Maximum</div><div class="value" style="color:#085041">${fmt(maxVal)}</div><div class="sub">${raw[maxIdx][0]}</div></div>
+  <div class="metric"><div class="label">Minimum</div><div class="value" style="color:#712B13">${fmt(minVal)}</div><div class="sub">${raw[minIdx][0]}</div></div>
+`;
+
+/* ── group rows by "Mon YYYY" ── */
+function getMonthKey(dateStr) {
+  const d = new Date(dateStr);
+  return d.toLocaleString("en-IN", { month: "short", year: "numeric" });
+}
+
+// Build groups: [{key, rows:[{i, date, val, change}]}]
+const groups = [];
+const keyOrder = [];
+raw.forEach((r, i) => {
+  const key = getMonthKey(r[0]);
+  if (!keyOrder.includes(key)) { keyOrder.push(key); groups.push({ key, rows: [] }); }
+  const g = groups.find(g => g.key === key);
+  const change = i === 0 ? null : r[1] - raw[i-1][1];
+  g.rows.push({ i, date: r[0], val: r[1], change });
+});
+
+/* ── render table ── */
+const tbody = document.getElementById("tbody");
+const monthState = {}; // key -> open(true)/closed(false)
+
+groups.forEach(g => {
+  monthState[g.key] = true; // default: expanded
+
+  // Month summary: net change across month
+  const firstVal = g.rows[0].val;
+  const lastVal  = g.rows[g.rows.length - 1].val;
+  const netChg   = lastVal - firstVal;
+  const netCls   = netChg > 0 ? "up" : netChg < 0 ? "dn" : "neu";
+  const countStr = `${g.rows.length} days`;
+
+  // Header row
+  const headerTr = document.createElement("tr");
+  headerTr.className = "month-row";
+  headerTr.dataset.month = g.key;
+  headerTr.innerHTML = `
+    <td colspan="2">
+      <button class="month-toggle-btn" data-month="${g.key}" onclick="toggleMonth('${g.key}')">
+        <span class="toggle-arrow open" id="arrow-${CSS.escape(g.key)}">▶</span>
+        ${g.key}
+      </button>
+    </td>
+    <td class="month-summary-cell">${countStr}</td>
+    <td class="month-summary-cell ${netCls}">${fmtChg(netChg)} net</td>
+  `;
+  headerTr.addEventListener("click", (e) => {
+    if (!e.target.closest(".month-toggle-btn")) toggleMonth(g.key);
+  });
+  tbody.appendChild(headerTr);
+
+  // Data rows
+  g.rows.forEach(row => {
+    const isMax = row.val === maxVal, isMin = row.val === minVal;
+    const chgStr = row.change === null ? "—" : fmtChg(row.change);
+    const cls    = row.change === null ? "neu" : row.change > 0 ? "up" : "dn";
+    const badge  = isMax ? '<span class="badge badge-max">MAX</span>' : isMin ? '<span class="badge badge-min">MIN</span>' : '';
+    const rowCls = isMax ? "row-max" : isMin ? "row-min" : "";
+
+    const tr = document.createElement("tr");
+    tr.className = `data-row ${rowCls}`;
+    tr.dataset.month = g.key;
+    tr.innerHTML = `
+      <td style="color:var(--text-faint)">${row.i + 1}</td>
+      <td>${row.date}</td>
+      <td>${fmt(row.val)}${badge}</td>
+      <td class="${cls}">${chgStr}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+});
+
+function toggleMonth(key) {
+  monthState[key] = !monthState[key];
+  const isOpen = monthState[key];
+  // toggle rows
+  document.querySelectorAll(`.data-row[data-month="${key}"]`).forEach(tr => {
+    tr.classList.toggle("hidden", !isOpen);
+  });
+  // toggle arrow
+  const arrow = document.getElementById("arrow-" + CSS.escape(key));
+  if (arrow) arrow.classList.toggle("open", isOpen);
+}
+
+/* ── chart ── */
+const bgColors     = raw.map((_,i) => i===maxIdx ? "rgba(29,158,117,0.55)" : i===minIdx ? "rgba(216,90,48,0.55)" : "rgba(55,138,221,0.35)");
+const borderColors = raw.map((_,i) => i===maxIdx ? "#085041" : i===minIdx ? "#4A1B0C" : "#185FA5");
+
+let chartInstance = null;
+function buildChart(darkMode) {
+  if (chartInstance) chartInstance.destroy();
+  const gridColor = darkMode ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)";
+  const tickColor = darkMode ? "#666662" : "#888780";
+  chartInstance = new Chart(document.getElementById("chart"), {
+    type: "line",
+    data: {
+      labels: raw.map(r => r[0]),
+      datasets: [{
+        label: "Grand Total",
+        data: vals,
+        fill: true,
+        tension: 0.3,
+        borderColor: "#185FA5",
+        borderWidth: 1.8,
+        backgroundColor: darkMode ? "rgba(55,138,221,0.05)" : "rgba(55,138,221,0.08)",
+        pointBackgroundColor: bgColors,
+        pointBorderColor: borderColors,
+        pointBorderWidth: raw.map((_,i) => (i===maxIdx||i===minIdx)?2:1),
+        pointRadius: raw.map((_,i) => (i===maxIdx||i===minIdx)?7:3),
+        pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              let label = "  Value: INR " + ctx.parsed.y.toLocaleString("en-IN");
+              if (ctx.dataIndex === maxIdx) label += "  ▲ MAX";
+              if (ctx.dataIndex === minIdx) label += "  ▼ MIN";
+              return label;
+            },
+            afterLabel: ctx => {
+              const i = ctx.dataIndex;
+              if (i === 0) return "";
+              const chg = vals[i] - vals[i-1];
+              return "  Change: " + (chg >= 0 ? "+INR " : "-INR ") + Math.abs(chg).toLocaleString("en-IN");
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { autoSkip: true, maxTicksLimit: 14, maxRotation: 45, font: { size: 10 }, color: tickColor },
+          grid: { color: gridColor }
+        },
+        y: {
+          ticks: {
+            callback: v => "INR " + (v/100000).toFixed(1) + "L",
+            font: { size: 10 },
+            color: tickColor
+          },
+          grid: { color: gridColor }
+        }
+      }
+    }
+  });
+}
+
+/* ── dark mode ── */
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  const next = isDark ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  document.getElementById("dmIcon").textContent  = next === "dark" ? "🌙" : "☀️";
+  document.getElementById("dmLabel").textContent = next === "dark" ? "Dark" : "Light";
+  buildChart(next === "dark");
+}
+
+buildChart(false);
+</script>
+</body>
+</html>
