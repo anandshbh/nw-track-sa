@@ -2,7 +2,7 @@
 
 > A personal mutual fund portfolio tracker — automated, always up to date, and beautifully visualised.
 
-**Live site →** [anandshbh.github.io/nw-track-sa](https://www.cloudquip.com/)
+**Live site →** [https://www.cloudquip.com/](https://www.cloudquip.com/)
 
 ---
 
