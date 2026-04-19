@@ -1,6 +1,6 @@
 # 📈 Investment Value Track
 
-> A personal mutual fund portfolio tracker — automated, always up to date, and beautifully visualised.
+> A personal mutual fund portfolio tracker : automated, always up to date, and beautifully visualised.
 
 **Live site →** [https://www.cloudquip.com/](https://www.cloudquip.com/)
 
@@ -8,7 +8,7 @@
 
 ## What it does
 
-This is a lightweight, single-file dashboard that tracks the daily grand total value of a mutual fund portfolio — sourced automatically from Gmail and visualised as an interactive chart with a full data table.
+This is a lightweight, single-file dashboard that tracks the daily grand total value of a mutual fund portfolio : sourced automatically from Gmail and visualised as an interactive chart with a full data table.
 
 Every day, a Google Sheet sends an automated email with the current portfolio value. This tracker reads those emails and plots the journey.
 
@@ -16,12 +16,12 @@ Every day, a Google Sheet sends an automated email with the current portfolio va
 
 ## Features
 
-- **Daily value tracking** — one data point per day, pulled from Gmail
-- **Interactive line chart** — powered by Chart.js, with hover tooltips showing value and daily change
-- **Full data table** — every date listed with its value and the change from the previous day
-- **MAX / MIN highlights** — the highest and lowest values in the dataset are colour-highlighted in both the chart and the table
-- **INR formatting** — all values displayed in Indian Rupee format with proper locale formatting
-- **Zero dependencies to run** — a single `index.html` file; works offline in any browser
+- **Daily value tracking** : one data point per day, pulled from Gmail
+- **Interactive line chart** : powered by Chart.js, with hover tooltips showing value and daily change
+- **Full data table** : every date listed with its value and the change from the previous day
+- **MAX / MIN highlights** : the highest and lowest values in the dataset are colour-highlighted in both the chart and the table
+- **INR formatting** : all values displayed in Indian Rupee format with proper locale formatting
+- **Zero dependencies to run** : a single `index.html` file; works offline in any browser
 
 ---
 
@@ -31,7 +31,7 @@ Every day, a Google Sheet sends an automated email with the current portfolio va
 |---|---|
 | Dashboard | Plain HTML + CSS + JavaScript |
 | Chart | [Chart.js 4.4.1](https://www.chartjs.org/) via CDN |
-| Data source | Gmail — daily email with subject `Daily Sheet Update - Grand Total` |
+| Data source | Gmail : daily email with subject `Daily Sheet Update - Grand Total` |
 | Hosting | GitHub Pages |
 | Updates | Manual (via Claude AI + Gmail MCP) |
 
@@ -79,14 +79,14 @@ const raw = [
 
 To add new entries, append new `["DD Mon YYYY", value]` rows to this array. The chart, table, MAX/MIN highlights, and metric cards all update automatically.
 
-Updates are managed via Claude AI using the `UPDATE` command — Claude pulls the latest emails via Gmail MCP, calculates the daily changes, and pushes the updated `index.html` to this repo.
+Updates are managed via Claude AI using the `UPDATE` command : Claude pulls the latest emails via Gmail MCP, calculates the daily changes, and pushes the updated `index.html` to this repo.
 
 ---
 
 ## Notes on the data
 
-- **Duplicate emails** — When two emails exist for the same date, the later timestamp is used as the canonical value.
-- **Coverage** — Data runs from **19 Jan 2026** onwards and grows daily.
+- **Duplicate emails** : When two emails exist for the same date, the later timestamp is used as the canonical value.
+- **Coverage** : Data runs from **19 Jan 2026** onwards and grows daily.
 
 ---
 
