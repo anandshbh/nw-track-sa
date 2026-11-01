@@ -169,6 +169,7 @@
   .badge-max { background: #085041; color: #E1F5EE; }
   .badge-min { background: #712B13; color: #FAECE7; }
 
+  .na-cell { color: var(--text-faint); font-style: italic; }
   .note { font-size: 11px; color: var(--text-faint); margin-top: 8px; }
   @media (max-width: 500px) { .metric-row { grid-template-columns: 1fr 1fr; } }
 </style>
@@ -206,6 +207,7 @@
   </table>
 </div>
 <p class="note">* Feb 20 & 21 had no email. Feb 22 change is vs. Feb 19.</p>
+<p class="note">* 17 Jun – 17 Sep 2026 removed (sheet sent placeholder values during this period). 18 Sep change is vs. 16 Jun.</p>
 <p class="note" style="margin-top:16px; text-align:center;">© Shubhrant</p>
 
 <script>
@@ -313,19 +315,113 @@ const raw = [
   ["1 May 2026", 2432058],
   ["2 May 2026", 2438452],
   ["3 May 2026", 2438529],
+  ["4 May 2026", 2449374],
+  ["5 May 2026", 2453100],
+  ["6 May 2026", 2452688],
+  ["7 May 2026", 2456771],
+  ["8 May 2026", 2476549],
+  ["9 May 2026", 2477348],
+  ["10 May 2026", 2477512],
+  ["11 May 2026", 2476459],
+  ["12 May 2026", 2464507],
+  ["13 May 2026", 2442081],
+  ["14 May 2026", 2433353],
+  ["15 May 2026", 2476682],
+  ["16 May 2026", 2484251],
+  ["17 May 2026", 2484251],
+  ["18 May 2026", 2483692],
+  ["19 May 2026", 2458521],
+  ["20 May 2026", 2462212],
+  ["21 May 2026", 2465100],
+  ["22 May 2026", 2465546],
+  ["23 May 2026", 2463974],
+  ["24 May 2026", 2464183],
+  ["25 May 2026", 2464732],
+  ["26 May 2026", 2471341],
+  ["27 May 2026", 2482148],
+  ["28 May 2026", 2472169],
+  ["29 May 2026", 2468380],
+  ["30 May 2026", 2459424],
+  ["31 May 2026", 2459365],
+  ["1 Jun 2026", 2458583],
+  ["2 Jun 2026", 2442410],
+  ["3 Jun 2026", 2438133],
+  ["4 Jun 2026", 2442069],
+  ["5 Jun 2026", 2427927],
+  ["6 Jun 2026", 2431007],
+  ["7 Jun 2026", 2431289],
+  ["8 Jun 2026", 2431395],
+  ["9 Jun 2026", 2414108],
+  ["10 Jun 2026", 2386113],
+  ["11 Jun 2026", 2393363],
+  ["12 Jun 2026", 2368863],
+  ["13 Jun 2026", 2376537],
+  ["14 Jun 2026", 2376507],
+  ["15 Jun 2026", 2377785],
+  ["16 Jun 2026", 2408470],
+  ["18 Sep 2026", 2340431],
+  ["19 Sep 2026", 2359016],
+  ["20 Sep 2026", 2358806],
+  ["21 Sep 2026", 2360385],
+  ["22 Sep 2026", 2359269],
+  ["23 Sep 2026", 2360579],
+  ["24 Sep 2026", 2358685],
+  ["25 Sep 2026", 2358070],
+  ["26 Sep 2026", 2341453],
+  ["27 Sep 2026", 2341556],
+  ["28 Sep 2026", 2340221],
+  ["29 Sep 2026", 2318156],
+  ["30 Sep 2026", 2300997],
+  ["1 Oct 2026", 2298635],
+  ["2 Oct 2026", 2294095],
+  ["3 Oct 2026", 2287468],
+  ["4 Oct 2026", 2287571],
+  ["5 Oct 2026", 2288097],
+  ["6 Oct 2026", 2296520],
+  ["7 Oct 2026", 2305259],
+  ["8 Oct 2026", 2299235],
+  ["9 Oct 2026", 2284770],
+  ["10 Oct 2026", 2286065],
+  ["11 Oct 2026", 2286088],
+  ["12 Oct 2026", 2284898],
+  ["13 Oct 2026", 2292018],
+  ["14 Oct 2026", 2293713],
+  ["15 Oct 2026", 2293725],
+  ["16 Oct 2026", 2294331],
+  ["17 Oct 2026", 2315022],
+  ["18 Oct 2026", 2314934],
+  ["19 Oct 2026", 2314983],
+  ["20 Oct 2026", 2307067],
+  ["21 Oct 2026", 2307171],
+  ["22 Oct 2026", 2298115],
+  ["23 Oct 2026", 2274657],
+  ["24 Oct 2026", 2255282],
+  ["25 Oct 2026", 2255531],
+  ["26 Oct 2026", 2256749],
+  ["27 Oct 2026", 2265473],
+  ["28 Oct 2026", 2273485],
+  ["29 Oct 2026", 2277885],
+  ["30 Oct 2026", 2275278],
+  ["31 Oct 2026", 2312074],
+  ["1 Nov 2026", 2312238],
 ];
 
 /* ── helpers ── */
 const fmt    = n => "INR " + n.toLocaleString("en-IN");
 const fmtChg = n => (n >= 0 ? "+INR " : "-INR ") + Math.abs(n).toLocaleString("en-IN");
 
-const vals   = raw.map(r => r[1]);
-const maxVal = Math.max(...vals), minVal = Math.min(...vals);
+const vals   = raw.map(r => r[1]);                 // null = sheet error day
+const valid  = vals.filter(v => v !== null);
+const maxVal = Math.max(...valid), minVal = Math.min(...valid);
 const maxIdx = vals.indexOf(maxVal), minIdx = vals.indexOf(minVal);
+const lastIdx = vals.map((v,i) => v === null ? -1 : i).filter(i => i >= 0).pop();
+// change vs the previous valid day
+const prevValid = i => { for (let j = i - 1; j >= 0; j--) if (vals[j] !== null) return j; return -1; };
+const changes = vals.map((v,i) => { if (v === null) return null; const p = prevValid(i); return p < 0 ? null : v - vals[p]; });
 
 /* ── metrics ── */
 document.getElementById("metrics").innerHTML = `
-  <div class="metric"><div class="label">Latest value</div><div class="value">${fmt(raw[raw.length-1][1])}</div><div class="sub">${raw[raw.length-1][0]}</div></div>
+  <div class="metric"><div class="label">Latest value</div><div class="value">${fmt(vals[lastIdx])}</div><div class="sub">${raw[lastIdx][0]}</div></div>
   <div class="metric"><div class="label">Maximum</div><div class="value" style="color:#085041">${fmt(maxVal)}</div><div class="sub">${raw[maxIdx][0]}</div></div>
   <div class="metric"><div class="label">Minimum</div><div class="value" style="color:#712B13">${fmt(minVal)}</div><div class="sub">${raw[minIdx][0]}</div></div>
 `;
@@ -343,8 +439,7 @@ raw.forEach((r, i) => {
   const key = getMonthKey(r[0]);
   if (!keyOrder.includes(key)) { keyOrder.push(key); groups.push({ key, rows: [] }); }
   const g = groups.find(g => g.key === key);
-  const change = i === 0 ? null : r[1] - raw[i-1][1];
-  g.rows.push({ i, date: r[0], val: r[1], change });
+  g.rows.push({ i, date: r[0], val: r[1], change: changes[i], reported: r[2] });
 });
 
 /* ── render table ── */
@@ -355,11 +450,11 @@ groups.forEach(g => {
   monthState[g.key] = true; // default: expanded
 
   // Month summary: net change across month
-  const firstVal = g.rows[0].val;
-  const lastVal  = g.rows[g.rows.length - 1].val;
-  const netChg   = lastVal - firstVal;
-  const netCls   = netChg > 0 ? "up" : netChg < 0 ? "dn" : "neu";
-  const countStr = `${g.rows.length} days`;
+  const okRows   = g.rows.filter(r => r.val !== null);
+  const netChg   = okRows.length ? okRows[okRows.length - 1].val - okRows[0].val : null;
+  const netCls   = netChg === null ? "neu" : netChg > 0 ? "up" : netChg < 0 ? "dn" : "neu";
+  const badDays  = g.rows.length - okRows.length;
+  const countStr = `${g.rows.length} days` + (badDays ? ` (${badDays} sheet error)` : "");
 
   // Header row
   const headerTr = document.createElement("tr");
@@ -373,7 +468,7 @@ groups.forEach(g => {
       </button>
     </td>
     <td class="month-summary-cell">${countStr}</td>
-    <td class="month-summary-cell ${netCls}">${fmtChg(netChg)} net</td>
+    <td class="month-summary-cell ${netCls}">${netChg === null ? "no valid data" : fmtChg(netChg) + " net"}</td>
   `;
   headerTr.addEventListener("click", (e) => {
     if (!e.target.closest(".month-toggle-btn")) toggleMonth(g.key);
@@ -382,7 +477,7 @@ groups.forEach(g => {
 
   // Data rows
   g.rows.forEach(row => {
-    const isMax = row.val === maxVal, isMin = row.val === minVal;
+    const isMax = row.i === maxIdx, isMin = row.i === minIdx;
     const chgStr = row.change === null ? "—" : fmtChg(row.change);
     const cls    = row.change === null ? "neu" : row.change > 0 ? "up" : "dn";
     const badge  = isMax ? '<span class="badge badge-max">MAX</span>' : isMin ? '<span class="badge badge-min">MIN</span>' : '';
@@ -394,7 +489,7 @@ groups.forEach(g => {
     tr.innerHTML = `
       <td style="color:var(--text-faint)">${row.i + 1}</td>
       <td>${row.date}</td>
-      <td>${fmt(row.val)}${badge}</td>
+      <td${row.val === null ? ' class="na-cell"' : ''}>${row.val === null ? `Sheet error (reported ${row.reported})` : fmt(row.val) + badge}</td>
       <td class="${cls}">${chgStr}</td>
     `;
     tbody.appendChild(tr);
@@ -439,6 +534,7 @@ function buildChart(darkMode) {
         pointBorderWidth: raw.map((_,i) => (i===maxIdx||i===minIdx)?2:1),
         pointRadius: raw.map((_,i) => (i===maxIdx||i===minIdx)?7:3),
         pointHoverRadius: 6,
+        spanGaps: false,
       }]
     },
     options: {
@@ -457,7 +553,8 @@ function buildChart(darkMode) {
             afterLabel: ctx => {
               const i = ctx.dataIndex;
               if (i === 0) return "";
-              const chg = vals[i] - vals[i-1];
+              const chg = changes[i];
+              if (chg === null) return "";
               return "  Change: " + (chg >= 0 ? "+INR " : "-INR ") + Math.abs(chg).toLocaleString("en-IN");
             }
           }
