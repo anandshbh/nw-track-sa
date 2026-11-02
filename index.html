@@ -84,6 +84,19 @@
     user-select: none;
   }
   .dm-toggle:hover { background: var(--month-bg); }
+  .expand-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .expand-all-btn {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    transition: background 0.2s, border-color 0.2s;
+    user-select: none;
+  }
+  .expand-all-btn:hover { background: var(--month-bg); }
   .dm-icon { font-size: 14px; transition: transform 0.4s; }
   [data-theme="dark"] .dm-icon { transform: rotate(180deg); }
 
@@ -199,6 +212,10 @@
 </div>
 
 <div class="chart-wrap"><canvas id="chart"></canvas></div>
+
+<div class="expand-bar">
+  <button class="expand-all-btn" id="expandAllBtn" onclick="toggleAllMonths()">Collapse all</button>
+</div>
 
 <div class="tbl-container">
   <table>
@@ -497,16 +514,29 @@ groups.forEach(g => {
   });
 });
 
-function toggleMonth(key) {
-  monthState[key] = !monthState[key];
-  const isOpen = monthState[key];
-  // toggle rows
+function setMonth(key, isOpen) {
+  monthState[key] = isOpen;
   document.querySelectorAll(`.data-row[data-month="${key}"]`).forEach(tr => {
     tr.classList.toggle("hidden", !isOpen);
   });
-  // toggle arrow
   const arrow = document.getElementById("arrow-" + CSS.escape(key));
   if (arrow) arrow.classList.toggle("open", isOpen);
+}
+
+function updateAllBtn() {
+  const anyOpen = Object.values(monthState).some(Boolean);
+  document.getElementById("expandAllBtn").textContent = anyOpen ? "Collapse all" : "Expand all";
+}
+
+function toggleMonth(key) {
+  setMonth(key, !monthState[key]);
+  updateAllBtn();
+}
+
+function toggleAllMonths() {
+  const open = !Object.values(monthState).some(Boolean);
+  Object.keys(monthState).forEach(k => setMonth(k, open));
+  updateAllBtn();
 }
 
 /* ── chart ── */
